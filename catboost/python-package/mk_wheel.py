@@ -14,7 +14,8 @@ from base64 import urlsafe_b64encode
 
 sys.dont_write_bytecode = True
 
-PL_LINUX = 'manylinux1_x86_64'
+PL_LINUX_X86_64 = 'manylinux1_x86_64'
+PL_LINUX_ARM64 = 'linux_aarch64' 
 PL_MACOS = 'macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64'
 PL_WIN = 'win_amd64'
 
@@ -38,8 +39,11 @@ class PythonTrait(object):
     def gen_cmd(self):
         cmd = [
             sys.executable, arc_root + '/ya', 'make', os.path.join(arc_root, 'catboost', 'python-package', 'catboost'),
-            '--no-src-links', '-r', '--output', out_root, '-DPYTHON_CONFIG=' + self.py_config, '-DNO_DEBUGINFO', '-DOS_SDK=local',
+            '--no-src-links', '-r', '--output', out_root, '-DPYTHON_CONFIG=' + self.py_config, '-DNO_DEBUGINFO'
         ]
+
+        if 'aarch64' not in self.platform:
+            cmd += '-DOS_SDK=local'
 
         if not self.python_version.from_sandbox:
             cmd += ['-DUSE_ARCADIA_PYTHON=no']
@@ -105,7 +109,10 @@ def find_target_platform(tail_args):
 
 def transform_platform(platform):
     if 'linux' in platform:
-        return PL_LINUX
+        if 'aarch64' in platform:
+            return PL_LINUX_ARM64
+        else:
+            return PL_LINUX_X86_64
     elif 'darwin' in platform:
         return PL_MACOS
     elif 'win' in platform:
